@@ -4,33 +4,55 @@
         <b-form>           
             <b-card no-body class="mb-1">
                 <b-card-header header-tag="header" class="p-1" role="tab">
-                    <b-button block v-b-toggle.accordion-1 variant="primary">Периоды расчета</b-button>
+                    <b-button block v-b-toggle.tab-1 variant="primary">Периоды расчета</b-button>
                 </b-card-header>
-                <b-collapse id="accordion-1" role="tabpanel" visible>                    
+                <b-collapse id="tab-1" role="tabpanel" visible>                    
                     <b-card-body>  
                         <b-card-text class="left">Выберите продолжительность одного периода:</b-card-text>                      
                         <b-form-select v-model="selectedTime" :options="times"></b-form-select>                        
                         <b-card-text class="left">Введите общее количество периодов:</b-card-text>
-                        <b-form-input v-model="numPeriods" type="number" min="0" max="1000"></b-form-input>                         
+                        <b-form-input v-model="numPeriods" type="number" min="0" max="1000" @change="changePeriods(numPeriods)"></b-form-input>                         
                     </b-card-body>
                 </b-collapse>
             </b-card>
             <b-card no-body class="mb-1">
                 <b-card-header header-tag="header" class="p-1" role="tab">
-                    <b-button block v-b-toggle.accordion-2 variant="primary">Ставки</b-button>                    
+                    <b-button block v-b-toggle.tab-2 variant="primary">Ставки</b-button>                    
                 </b-card-header>
-                <b-collapse id="accordion-2" role="tabpanel">                    
+                <b-collapse id="tab-2" role="tabpanel">                    
                     <b-card-body>    
-                        <b-card-text class="left">Введите ставку дисконтирования, %:</b-card-text>                      
+                        <b-card-text class="left">Введите годовую эффективную ставку дисконтирования, %:</b-card-text>                      
                         <b-form-input v-model="discountRate" type="number" min="0" max="100"></b-form-input>
                         <br/>
                         <b-form-checkbox id="check-reinvest" class="left" switch v-model="isReinvest">
-                            Реинвестируются ли доходы?</b-form-checkbox> 
-                        <!-- <label for="check-reinvest">{{ isReinvest }}</label> -->
+                            Реинвестируются ли доходы?</b-form-checkbox>                         
                         <b-collapse :visible="isReinvest">
-                            <b-card-text class="left">Введите ставку реинвестирования, %:</b-card-text>
+                            <b-card-text class="left">Введите годовую эффективную ставку реинвестирования, %:</b-card-text>
                             <b-form-input v-model="reinvestRate" type="number" min="0" max="100" :disabled="!isReinvest"></b-form-input>
-                        </b-collapse>                                                 
+                        </b-collapse>                                                                         
+                    </b-card-body>
+                </b-collapse>
+            </b-card>
+            <b-card no-body class="mb-1">
+                <b-card-header header-tag="header" class="p-1" role="tab">
+                    <b-button block v-b-toggle.tab-3 variant="primary">Потоки платежей</b-button>
+                </b-card-header>
+                <b-collapse id="tab-3" role="tabpanel">                    
+                    <b-card-body>  
+                       <!-- <b-card-text class="left">Введите дату начала проекта (<b>период, к которому относится дата, считается нулевым</b>):</b-card-text>
+                       <b-form-input type="date" id="begin-date" v-model="zeroDate" @change="changeInDate(zeroDate)"></b-form-input>  -->
+                       <!-- <label for="begin-date">{{ zeroDate }}</label>   -->
+                       <b-collapse :visible="zeroDate != null">
+                            <label>{{ periods }}</label>
+                            <b-row v-for="period in periods" :key="period">                                
+                                <b-col sm="3">
+                                    <label :for="`period-${period}`">Период {{ period }}:</label>
+                                </b-col>
+                                <b-col sm="9">
+                                    <b-form-input :id="`period-${period}`"></b-form-input>
+                                </b-col>
+                                </b-row>
+                        </b-collapse>                    
                     </b-card-body>
                 </b-collapse>
             </b-card>
@@ -42,22 +64,32 @@ export default {
     data() {
         return {
             isReinvest: false,
-            selectedTime: 'year',
+            isResult: false,            
             numPeriods: 0,
             discountRate: 0,
             reinvestRate: 0,  
+            selectedTime: 'year',
+            zeroDate: null,
             times: [                
                 { value: 'year', text: 'год' },
                 { value: 'halfyear', text: 'полугодие' },
                 { value: 'quarter', text: 'квартал' },
                 { value: 'month', text: 'месяц' }
-            ]
+            ],
+            periods: ['0']
         }
     },
     methods: {
-        toggleReinvest() {
-            console.log('change reinvest')
-            this.isReinvest = !this.isReinvest;
+        changePeriods(newValue) {
+            console.log(newValue)            
+            var len = this.periods.length
+            var diff = newValue - len
+            if (diff > 0) {
+                for(let i=len; i<newValue; i++) {
+                    this.periods.push(i.toString())
+                }
+            }
+            
         }
     }
 }
