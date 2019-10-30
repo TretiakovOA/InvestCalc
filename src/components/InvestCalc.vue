@@ -1,4 +1,4 @@
-<template>    
+<template>  
     <b-container>
         <h1>Расчет эффективности инвестиций</h1>        
         <b-form>           
@@ -42,17 +42,16 @@
                        <!-- <b-card-text class="left">Введите дату начала проекта (<b>период, к которому относится дата, считается нулевым</b>):</b-card-text>
                        <b-form-input type="date" id="begin-date" v-model="zeroDate" @change="changeInDate(zeroDate)"></b-form-input>  -->
                        <!-- <label for="begin-date">{{ zeroDate }}</label>   -->
-                       <!-- <b-collapse :visible="zeroDate != null"> -->
-                        <b-collapse>                            
-                            <b-row v-for="period in periods" :key="period">                                
-                                <b-col sm="3">
-                                    <label :for="`period-${period}`">Период {{ period }}:</label>
-                                </b-col>
-                                <b-col sm="9">
-                                    <b-form-input :id="`period-${period}`"></b-form-input>
-                                </b-col>
-                            </b-row>
-                        </b-collapse>                    
+                       <!-- <b-collapse :visible="zeroDate != null"> -->                                                    
+                        <b-card-text class="left">Введите потоки платежей по периодам (инвестиции и расходы вводить как отрицательные значения):</b-card-text>
+                        <b-row v-for="period in periods" :key="period">                                
+                            <b-col sm="3">
+                                <label class="bottom" :for="`period-${period}`">Период {{ period }}:</label>
+                            </b-col>
+                            <b-col sm="9">
+                                <b-form-input type="number" :id="`period-${period}`" v-model="cashflow[period]" ></b-form-input>
+                            </b-col>
+                        </b-row>                                            
                     </b-card-body>
                 </b-collapse>
             </b-card>
@@ -76,7 +75,8 @@ export default {
                 { value: 'quarter', text: 'квартал' },
                 { value: 'month', text: 'месяц' }
             ],
-            periods: ['0']
+            periods: ['0'],
+            cashflow: [0],
         }
     },
     methods: {
@@ -86,11 +86,13 @@ export default {
             if (newValue >= len) {
                 for(let i = len; i <= newValue; i++) {
                     this.periods.push(i.toString())
+                    this.cashflow.push(0);
                 }
             }
             else if (len > newValue) {
                 for(let i = len - 1; i > newValue; i--) {
                     this.periods.pop()
+                    this.cashflow.pop()
                 }
             }            
         }
@@ -101,5 +103,8 @@ export default {
     .left {
         margin-top: 10px;
         text-align: left;
+    }
+    .bottom {
+        padding-top: 10px;
     }
 </style>
