@@ -42,8 +42,8 @@
                        <!-- <b-card-text class="left">Введите дату начала проекта (<b>период, к которому относится дата, считается нулевым</b>):</b-card-text>
                        <b-form-input type="date" id="begin-date" v-model="zeroDate" @change="changeInDate(zeroDate)"></b-form-input>  -->
                        <!-- <label for="begin-date">{{ zeroDate }}</label>   -->
-                       <b-collapse :visible="zeroDate != null">
-                            <label>{{ periods }}</label>
+                       <!-- <b-collapse :visible="zeroDate != null"> -->
+                        <b-collapse>                            
                             <b-row v-for="period in periods" :key="period">                                
                                 <b-col sm="3">
                                     <label :for="`period-${period}`">Период {{ period }}:</label>
@@ -51,7 +51,7 @@
                                 <b-col sm="9">
                                     <b-form-input :id="`period-${period}`"></b-form-input>
                                 </b-col>
-                                </b-row>
+                            </b-row>
                         </b-collapse>                    
                     </b-card-body>
                 </b-collapse>
@@ -82,14 +82,17 @@ export default {
     methods: {
         changePeriods(newValue) {
             console.log(newValue)            
-            var len = this.periods.length
-            var diff = newValue - len
-            if (diff > 0) {
-                for(let i=len; i<newValue; i++) {
+            var len = this.periods.length            
+            if (newValue >= len) {
+                for(let i = len; i <= newValue; i++) {
                     this.periods.push(i.toString())
                 }
             }
-            
+            else if (len > newValue) {
+                for(let i = len - 1; i > newValue; i--) {
+                    this.periods.pop()
+                }
+            }            
         }
     }
 }
