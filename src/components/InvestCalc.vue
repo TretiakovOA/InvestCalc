@@ -49,9 +49,27 @@
                                 <label class="bottom" :for="`period-${period}`">Период {{ period }}:</label>
                             </b-col>
                             <b-col sm="9">
-                                <b-form-input type="number" :id="`period-${period}`" v-model="cashflow[period]" ></b-form-input>
+                                <b-form-input type="number" :id="`period-${period}`" v-model="cashflow[period]" ref="`period-${period}`"></b-form-input>
                             </b-col>
                         </b-row>                                            
+                    </b-card-body>
+                </b-collapse>
+            </b-card>
+            <br/>
+            <b-button type="submit" variant="info" @click="onSubmit">Расчет</b-button>
+            <b-button class="btn-margin" type="reset" variant="danger" @click="onReset">Сброс значений</b-button>
+            <b-button class="btn-margin" variant="primary" @click="asFirst">Как в первом периоде</b-button>
+            <br/>
+            <b-alert v-model="showAlert" class="mt-3" dismissible>Расчет по приведенным данным невозможен!</b-alert>
+            <br/>
+            <b-card no-body class="mb-1" v-if="isResult">
+                <b-card-header header-tag="header" class="p-1" role="tab">
+                    <b-button block v-b-toggle.tab-1 variant="primary">Результаты расчета</b-button>
+                </b-card-header>
+                <b-collapse id="tab-1" role="tabpanel" visible>                    
+                    <b-card-body>  
+                        <b-card-text class="left">Чистый дисконтированный доход, NPV: {{npv}}</b-card-text>                      
+                                                 
                     </b-card-body>
                 </b-collapse>
             </b-card>
@@ -63,12 +81,14 @@ export default {
     data() {
         return {
             isReinvest: false,
-            isResult: false,            
+            isResult: false, 
+            showAlert: false,           
             numPeriods: 0,
             discountRate: 0,
             reinvestRate: 0,  
+            npv: 0,
             selectedTime: 'year',
-            zeroDate: null,
+            //zeroDate: null,
             times: [                
                 { value: 'year', text: 'год' },
                 { value: 'halfyear', text: 'полугодие' },
@@ -95,6 +115,46 @@ export default {
                     this.cashflow.pop()
                 }
             }            
+        },
+        asFirst() {            
+            var len = this.cashflow.length
+            if (len < 2) return
+            var firstVal = this.cashflow[1]
+            for(let i = len - 1; i > 1; i--) {
+                this.periods.pop()
+                this.cashflow.pop()
+            }
+            for(let i = 2; i < len; i++) {
+                this.periods.push(i.toString())
+                this.cashflow.push(firstVal);
+            }
+        },        
+        onReset(evt) {
+            evt.preventDefault()            
+            this.cashflow = [0]
+            this.periods = ['0']
+            this.reinvestRate = 0 
+            this.isReinvest = false
+            this.discountRate = 0
+            this.numPeriods = 0
+            this.selectedTime = 'year'            
+            this.isResult = false  
+        },
+        onSubmit(evt) {
+            evt.preventDefault()
+            if (this.numPeriods < 1 || this.discountRate <= 0 || this.cashflow[0] >= 0) {
+                this.showAlert = true
+                this.isResult = false
+                return
+            }
+            this.npv = parseFloat(this.cashflow[0])
+            for (let i = 1; i <= this.numPeriods; i++) {
+                var discount = 1 / Math.pow(1 + (this.discountRate) / 100, i)
+                this.npv += this.cashflow[i] * discount
+            }
+            this.showAlert = false
+            this.isResult = true
+            //action
         }
     }
 }
@@ -104,7 +164,10 @@ export default {
         margin-top: 10px;
         text-align: left;
     }
+    .btn-margin {
+        margin-left: 20px;
+    }
     .bottom {
         padding-top: 10px;
-    }
+    }    
 </style>
