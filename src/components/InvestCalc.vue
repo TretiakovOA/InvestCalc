@@ -68,8 +68,11 @@
                 </b-card-header>
                 <b-collapse id="tab-1" role="tabpanel" visible>                    
                     <b-card-body>  
-                        <b-card-text class="left">Чистый дисконтированный доход, NPV: {{npv}}</b-card-text>                      
-                                                 
+                        <b-card-text class="left">Чистый дисконтированный доход, NPV:                {{npv.toFixed(2)}}</b-card-text>                      
+                        <b-card-text class="left">Срок окупаемости, PP:                              {{ppReturn}}</b-card-text>   
+                        <b-card-text class="left">Индекс рентабельности, PI:                         {{pi.toFixed(2)}} %</b-card-text>
+                        <b-card-text class="left">Внутренняя ставка доходности, IRR:                 {{irrReturn}}</b-card-text>
+                        <b-card-text class="left" v-if="isReinvest">Модифицированная внутренняя ставка доходности, MIRR: {{mirrReturn}}</b-card-text>
                     </b-card-body>
                 </b-collapse>
             </b-card>
@@ -87,6 +90,10 @@ export default {
             discountRate: 0,
             reinvestRate: 0,  
             npv: 0,
+            pp: -1,
+            pi: 0,
+            irr: 0,
+            mirr: 0,            
             selectedTime: 'year',
             //zeroDate: null,
             times: [                
@@ -97,6 +104,20 @@ export default {
             ],
             periods: ['0'],
             cashflow: [0],
+        }
+    },
+    computed: {
+        ppReturn() {
+            if (this.pp < 0) return "Проект не окупается"
+            return this.pp.toFixed(2)
+        }, 
+        irrReturn() {
+            if (isNaN(this.irr)) return "Неудачный расчет"
+            return this.irr.toFixed(3) + ' %'
+        },
+        mirrReturn() {
+            if (isNaN(this.mirr)) return "Неудачный расчет"
+            return this.mirr.toFixed(3) + ' %'
         }
     },
     methods: {
@@ -130,7 +151,12 @@ export default {
             }
         },        
         onReset(evt) {
-            evt.preventDefault()            
+            evt.preventDefault()  
+            this.npv = 0
+            this.pp = -1
+            this.pi = 0    
+            this.irr = 0
+            this.mirr = 0      
             this.cashflow = [0]
             this.periods = ['0']
             this.reinvestRate = 0 
@@ -147,14 +173,72 @@ export default {
                 this.isResult = false
                 return
             }
+            this.pp = -1
             this.npv = parseFloat(this.cashflow[0])
+            var lastInvest = 0
+            var totalInvest = this.npv
             for (let i = 1; i <= this.numPeriods; i++) {
                 var discount = 1 / Math.pow(1 + (this.discountRate) / 100, i)
+                var lastNpv = this.npv
                 this.npv += this.cashflow[i] * discount
-            }
+                if (this.cashflow[i] < 0 && lastInvest === i-1) {
+                    lastInvest = i
+                    totalInvest += this.cashflow[i] * discount
+                }
+                if (this.npv > 0 && this.pp === -1) this.pp = (i-1) + (1 - this.npv / (this.npv - lastNpv))
+            }            
+            this.pi = (this.npv / Math.abs(totalInvest)) * 100
+            this.irr = this.calcIrr()
+            this.mirr = this.calcMirr()
             this.showAlert = false
-            this.isResult = true
-            //action
+            this.isResult = true            
+        },
+        calcNpv(discountRate) {
+            var result = parseFloat(this.cashflow[0])
+            for (let i = 1; i <= this.numPeriods; i++) {
+                var discount = 1 / Math.pow(1 + (discountRate) / 100, i)                
+                result += this.cashflow[i] * discount
+            }
+            return result
+        },
+        calcIrr() {            
+            var testVal = parseFloat(this.discountRate)
+            var possibleNpv
+            var max = Math.abs(this.cashflow[0] * 100)
+            var min = 0 - max
+            var step = 1
+            var i = 1
+            do {
+                possibleNpv = this.calcNpv(testVal)
+                if (possibleNpv < (max / 2) && possibleNpv > (min / 2)) step /= 2
+                else if (possibleNpv > max || possibleNpv < min) step *= 2                                    
+                if (possibleNpv > 0.01) testVal += step
+                else if (possibleNpv < -0.01) testVal -= step
+                if (possibleNpv > 0) max = possibleNpv
+                else min = possibleNpv
+                i++
+                if (i > 100000) {
+                    testVal = NaN
+                    return
+                }
+            } while (possibleNpv > 0.01 || possibleNpv < - 0.01);
+            return testVal
+        },
+        calcMirr() {
+            if (!this.isReinvest || this.reinvestRate <= 0) return NaN            
+            var positives = 0
+            var negatives = 0
+            for (let i = 0; i <= this.numPeriods; i++) {    
+                if (this.cashflow[i] > 0) {
+                    var reinvest = Math.pow(1 + (this.reinvestRate) / 100, this.numPeriods - i)
+                    positives += this.cashflow[i] * reinvest
+                }
+                else if (this.cashflow[i] < 0) {
+                    var discount = 1 / Math.pow(1 + (this.discountRate) / 100, i)
+                    negatives += Math.abs(this.cashflow[i] * discount)
+                }
+            }
+            return (Math.pow(positives / negatives, 1 / this.numPeriods) - 1) * 100
         }
     }
 }
