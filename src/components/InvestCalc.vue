@@ -121,8 +121,7 @@ export default {
         }
     },
     methods: {
-        changePeriods(newValue) {
-            console.log(newValue)            
+        changePeriods(newValue) {                   
             var len = this.periods.length            
             if (newValue >= len) {
                 for(let i = len; i <= newValue; i++) {
