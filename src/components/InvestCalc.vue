@@ -22,7 +22,7 @@
                 <b-collapse id="tab-2" role="tabpanel">                    
                     <b-card-body>    
                         <b-card-text class="left">Введите годовую эффективную ставку дисконтирования, %:</b-card-text>                      
-                        <b-form-input v-model="discountRate" type="number" min="0" max="100"></b-form-input>
+                        <b-form-input v-model="rate" type="number" min="0" max="100"></b-form-input>
                         <br/>
                         <b-form-checkbox id="check-reinvest" class="left" switch v-model="isReinvest">
                             Реинвестируются ли доходы?</b-form-checkbox>                         
@@ -87,7 +87,7 @@ export default {
             isResult: false, 
             showAlert: false,           
             numPeriods: 0,
-            discountRate: 0,
+            rate: 0,
             reinvestRate: 0,  
             npv: 0,
             pp: -1,
@@ -103,10 +103,18 @@ export default {
                 { value: 'month', text: 'месяц' }
             ],
             periods: ['0'],
-            cashflow: [0],
+            cashflow: [-100000],
         }
     },
     computed: {
+        discountRate() {
+            switch(this.selectedTime) {                
+                case 'halfyear': return (Math.pow(1 + this.rate/100, 1/2) - 1) * 100
+                case 'quarter':  return (Math.pow(1 + this.rate/100, 1/4) - 1) * 100
+                case 'month':    return (Math.pow(1 + this.rate/100, 1/12) - 1) * 100
+                default:         return this.rate
+            }
+        },
         ppReturn() {
             if (this.pp < 0) return "Проект не окупается"
             return this.pp.toFixed(2)
