@@ -168,7 +168,7 @@ export default {
             this.periods = ['0']
             this.reinvestRate = 0 
             this.isReinvest = false
-            this.discountRate = 0
+            this.rate = 0
             this.numPeriods = 0
             this.selectedTime = 'year'            
             this.isResult = false  
